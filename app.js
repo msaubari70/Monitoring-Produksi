@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 const MONTHS_ID=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 const state={currentPage:'dashboard',bloks:[],produksi:[],editingId:null};
 const Storage={
@@ -6,7 +6,7 @@ const Storage={
   load(k,f=[]){try{const r=localStorage.getItem('sawitpro_'+k);return r?JSON.parse(r):f}catch{return f}}
 };
 function formatDate(d){return(d instanceof Date?d:new Date(d)).toISOString().split('T')[0]}
-function formatDD(s){if(!s)return'â€”';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
+function formatDD(s){if(!s)return'-';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function fNum(n){return Number(n).toLocaleString('id-ID')}
 function fDT(s){const d=new Date(s);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
 function getB(id){return state.bloks.find(b=>b.id===id)}
@@ -17,8 +17,8 @@ function uid(){return'P'+Date.now()+Math.random().toString(36).substr(2,4)}
 function mk(){return MONTHS_ID[new Date().getMonth()]}
 function getTarget(b){return b&&b.tp?b.tp[mk()]||0:0}
 function getSPH(b){return b&&b.luas>0?b.jumlahPohon/b.luas:0}
-function calcBJR(kg,jjg){return jjg>0?(kg/jjg).toFixed(2):'â€”'}
-function calcAKP(jjg,luas,sph){return luas>0&&sph>0?((jjg/(luas*sph))*100).toFixed(1):'â€”'}
+function calcBJR(kg,jjg){return jjg>0?(kg/jjg).toFixed(2):'-'}
+function calcAKP(jjg,luas,sph){return luas>0&&sph>0?((jjg/(luas*sph))*100).toFixed(1):'-'}
 
 // ===== HARI LIBUR NASIONAL INDONESIA =====
 const HOLIDAYS={
@@ -161,7 +161,7 @@ function renderDashboard(){
   document.getElementById('kpi-yph-budget-txt').textContent='Budget: '+yphBudget+' t/ha';
   document.getElementById('kpi-round').textContent=roundP+'x';
   document.getElementById('kpi-bjr').textContent=calcBJR(filtTBS,filtJjg)+' kg';
-  document.getElementById('kpi-akp').textContent=(filtLuas>0&&filtJjg>0?calcAKP(filtJjg,filtLuas,totalFieldLuas>0?state.bloks.reduce((s,b)=>s+b.jumlahPohon,0)/totalFieldLuas:0):'â€”')+'%';
+  document.getElementById('kpi-akp').textContent=(filtLuas>0&&filtJjg>0?calcAKP(filtJjg,filtLuas,totalFieldLuas>0?state.bloks.reduce((s,b)=>s+b.jumlahPohon,0)/totalFieldLuas:0):'-')+'%';
   const lbl=f.periode==='ytd'?'YTD':f.periode==='mtd'?'MTD':(!isNaN(f.periode)&&f.periode!=='custom')?MONTHS_ID[parseInt(f.periode)]+' '+new Date().getFullYear():'Custom';
   document.getElementById('reportPeriodeLabel').textContent=lbl;document.getElementById('chartBlokLabel').textContent=lbl;
   const now=new Date(),yB=now.getFullYear(),mB=now.getMonth();
@@ -245,15 +245,15 @@ function renderReportTable(f){
     const prodY=bdY.reduce((s,p)=>s+p.beratTBS,0);let budY=0;for(let i=0;i<=cmk;i++)budY+=getBTarget(b,i);
 
     const pct=bud>0?Math.round(prod/bud*100):0,pctY=budY>0?Math.round(prodY/budY*100):0;
-    const yA=b.luas>0?(prod/1000/b.luas).toFixed(3):'â€”',yBv=b.luas>0?(bud/1000/b.luas).toFixed(3):'â€”';
-    const rp=b.luas>0?(lp/b.luas).toFixed(2):'â€”',bjr=calcBJR(prod,jjg),sph=getSPH(b),akp=lp>0&&sph>0?calcAKP(jjg,lp,sph):'â€”';
+    const yA=b.luas>0?(prod/1000/b.luas).toFixed(3):'-',yBv=b.luas>0?(bud/1000/b.luas).toFixed(3):'-';
+    const rp=b.luas>0?(lp/b.luas).toFixed(2):'-',bjr=calcBJR(prod,jjg),sph=getSPH(b),akp=lp>0&&sph>0?calcAKP(jjg,lp,sph):'-';
     tProd+=prod;tBud+=bud;tLuas+=b.luas;tLP+=lp;tJjg+=jjg;tProdY+=prodY;tBudY+=budY;
     
     return `<tr><td><strong>${b.nama}</strong></td><td class="text-center">${b.luas}</td><td class="text-center">${fNum(prod)}</td><td class="text-center">${fNum(bud)}</td><td class="text-center"><span class="badge ${pct>=100?'badge-green':'badge-gold'}">${pct}%</span></td><td class="text-center">${fNum(prodY)}</td><td class="text-center">${fNum(budY)}</td><td class="text-center"><span class="badge ${pctY>=100?'badge-green':'badge-gold'}">${pctY}%</span></td><td class="text-center">${yA}</td><td class="text-center">${yBv}</td><td class="text-center">${rp}</td><td class="text-center">${bjr}</td><td class="text-center">${akp}</td></tr>`
   });
   tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="13" class="empty-row">Tidak ada data</td></tr>';
   const tPct=tBud>0?Math.round(tProd/tBud*100):0,tPctY=tBudY>0?Math.round(tProdY/tBudY*100):0;
-  tfoot.innerHTML=`<tr><td><strong>TOTAL</strong></td><td class="text-center">${tLuas.toFixed(1)}</td><td class="text-center"><strong>${fNum(tProd)}</strong></td><td class="text-center">${fNum(tBud)}</td><td class="text-center"><span class="badge ${tPct>=100?'badge-green':'badge-gold'}">${tPct}%</span></td><td class="text-center"><strong>${fNum(tProdY)}</strong></td><td class="text-center">${fNum(tBudY)}</td><td class="text-center"><span class="badge ${tPctY>=100?'badge-green':'badge-gold'}">${tPctY}%</span></td><td class="text-center">${tLuas>0?(tProd/1000/tLuas).toFixed(3):'â€”'}</td><td class="text-center">${tLuas>0?(tBud/1000/tLuas).toFixed(3):'â€”'}</td><td class="text-center">${tLuas>0?(tLP/tLuas).toFixed(2):'â€”'}</td><td class="text-center">${calcBJR(tProd,tJjg)}</td><td class="text-center">${tLP>0?calcAKP(tJjg,tLP,tLuas>0?state.bloks.reduce((s,x)=>s+x.jumlahPohon,0)/tLuas:0):'â€”'}</td></tr>`
+  tfoot.innerHTML=`<tr><td><strong>TOTAL</strong></td><td class="text-center">${tLuas.toFixed(1)}</td><td class="text-center"><strong>${fNum(tProd)}</strong></td><td class="text-center">${fNum(tBud)}</td><td class="text-center"><span class="badge ${tPct>=100?'badge-green':'badge-gold'}">${tPct}%</span></td><td class="text-center"><strong>${fNum(tProdY)}</strong></td><td class="text-center">${fNum(tBudY)}</td><td class="text-center"><span class="badge ${tPctY>=100?'badge-green':'badge-gold'}">${tPctY}%</span></td><td class="text-center">${tLuas>0?(tProd/1000/tLuas).toFixed(3):'-'}</td><td class="text-center">${tLuas>0?(tBud/1000/tLuas).toFixed(3):'-'}</td><td class="text-center">${tLuas>0?(tLP/tLuas).toFixed(2):'-'}</td><td class="text-center">${calcBJR(tProd,tJjg)}</td><td class="text-center">${tLP>0?calcAKP(tJjg,tLP,tLuas>0?state.bloks.reduce((s,x)=>s+x.jumlahPohon,0)/tLuas:0):'-'}</td></tr>`
 }
 function renderYTDChart(){
   const labels=[],aktual=[],budget=[];const yr=new Date().getFullYear(),cm=new Date().getMonth();
@@ -283,7 +283,7 @@ function renderYPHChart(f){
 }
 // ===== INPUT PAGE =====
 function renderInputPage(){
-  populateBlokSelect('inputBlok');document.getElementById('inputTanggal').valueAsDate=new Date();updateHintDay();updateTodayStats();
+  populateBlokSelect('inputBlok');document.getElementById('inputTanggal').value=today();updateHintDay();updateTodayStats();
   document.getElementById('inputBlok').addEventListener('change',updateBlokInfo);
   document.getElementById('previewBtn').addEventListener('click',showPreview);
   document.getElementById('resetFormBtn').addEventListener('click',resetForm);
@@ -306,7 +306,7 @@ function calcLiveFields(){
   const sph=blok?getSPH(blok):0;
   document.getElementById('displayAKP').textContent=calcAKP(jjg,lp,sph)+' %'
 }
-function populateBlokSelect(sid){const s=document.getElementById(sid),c=s.value;s.innerHTML='<option value="">â€” Pilih Field â€”</option>';state.bloks.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.nama;s.appendChild(o)});if(c)s.value=c}
+function populateBlokSelect(sid){const s=document.getElementById(sid),c=s.value;s.innerHTML='<option value="">- Pilih Field -</option>';state.bloks.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.nama;s.appendChild(o)});if(c)s.value=c}
 function updateBlokInfo(){
   const bid=document.getElementById('inputBlok').value,el=document.getElementById('blokInfo');
   if(!bid){el.innerHTML='<p class="empty-info">Pilih field untuk melihat informasi</p>';return}
@@ -314,7 +314,7 @@ function updateBlokInfo(){
   const{start:s,end:e}=mRange(0);const mTBS=state.produksi.filter(p=>p.blokId===bid&&p.tanggal>=s&&p.tanggal<=e).reduce((s,p)=>s+p.beratTBS,0);
   const mLP=state.produksi.filter(p=>p.blokId===bid&&p.tanggal>=s&&p.tanggal<=e).reduce((s,p)=>s+(p.luasPanen||0),0);
   const t=getTarget(b),sph=getSPH(b).toFixed(1),pct=t>0?Math.round(mTBS/t*100):0;
-  const round=b.luas>0?(mLP/b.luas).toFixed(2):'â€”';
+  const round=b.luas>0?(mLP/b.luas).toFixed(2):'-';
   el.innerHTML=`
     <div class="blok-info-item"><span class="blok-info-key">Nama Field</span><span class="blok-info-val">${b.nama}</span></div>
     <div class="blok-info-item"><span class="blok-info-key">Luas</span><span class="blok-info-val">${b.luas} Ha</span></div>
@@ -340,12 +340,12 @@ function showPreview(){
   const kg=parseFloat(document.getElementById('inputBerat').value),jjg=parseInt(document.getElementById('inputJanjang').value);
   const lp=parseFloat(document.getElementById('inputLuasPanen').value)||0;
   const rkg=parseFloat(document.getElementById('inputRestanKg').value)||0,rjjg=parseInt(document.getElementById('inputRestanJjg').value)||0;
-  const tkEl=document.querySelector('input[name="jenisTK"]:checked'),tk=tkEl?tkEl.value:'â€”';
+  const tkEl=document.querySelector('input[name="jenisTK"]:checked'),tk=tkEl?tkEl.value:'-';
   const mandor=document.getElementById('inputMandor').value,b=getB(bid),bjr=calcBJR(kg,jjg);
   const sph=b?getSPH(b):0,akp=calcAKP(jjg,lp,sph);
   const pv=document.getElementById('previewCard'),g=document.getElementById('previewGrid');
   if(!tgl&&!bid&&!kg){toast('Isi form terlebih dahulu','warning');return}
-  g.innerHTML=`<div class="preview-item"><span class="preview-key">Tanggal</span><span class="preview-val">${tgl?formatDD(tgl):'â€”'}</span></div><div class="preview-item"><span class="preview-key">Field</span><span class="preview-val">${b?b.nama:'â€”'}</span></div><div class="preview-item"><span class="preview-key">Produksi</span><span class="preview-val">${kg?fNum(kg)+' kg':'â€”'}</span></div><div class="preview-item"><span class="preview-key">Janjang</span><span class="preview-val">${jjg?fNum(jjg)+' jjg':'â€”'}</span></div><div class="preview-item"><span class="preview-key">BJR</span><span class="preview-val">${bjr} kg/jjg</span></div><div class="preview-item"><span class="preview-key">Luas Panen</span><span class="preview-val">${lp} Ha</span></div><div class="preview-item"><span class="preview-key">AKP</span><span class="preview-val">${akp}%</span></div><div class="preview-item"><span class="preview-key">Restan</span><span class="preview-val">${fNum(rkg)} kg / ${rjjg} jjg</span></div><div class="preview-item"><span class="preview-key">BJR Restan</span><span class="preview-val">${calcBJR(rkg,rjjg)} kg/jjg</span></div><div class="preview-item"><span class="preview-key">Jenis TK</span><span class="preview-val">${tk}</span></div><div class="preview-item"><span class="preview-key">Mandor</span><span class="preview-val">${mandor||'â€”'}</span></div>`;
+  g.innerHTML=`<div class="preview-item"><span class="preview-key">Tanggal</span><span class="preview-val">${tgl?formatDD(tgl):'-'}</span></div><div class="preview-item"><span class="preview-key">Field</span><span class="preview-val">${b?b.nama:'-'}</span></div><div class="preview-item"><span class="preview-key">Produksi</span><span class="preview-val">${kg?fNum(kg)+' kg':'-'}</span></div><div class="preview-item"><span class="preview-key">Janjang</span><span class="preview-val">${jjg?fNum(jjg)+' jjg':'-'}</span></div><div class="preview-item"><span class="preview-key">BJR</span><span class="preview-val">${bjr} kg/jjg</span></div><div class="preview-item"><span class="preview-key">Luas Panen</span><span class="preview-val">${lp} Ha</span></div><div class="preview-item"><span class="preview-key">AKP</span><span class="preview-val">${akp}%</span></div><div class="preview-item"><span class="preview-key">Restan</span><span class="preview-val">${fNum(rkg)} kg / ${rjjg} jjg</span></div><div class="preview-item"><span class="preview-key">BJR Restan</span><span class="preview-val">${calcBJR(rkg,rjjg)} kg/jjg</span></div><div class="preview-item"><span class="preview-key">Jenis TK</span><span class="preview-val">${tk}</span></div><div class="preview-item"><span class="preview-key">Mandor</span><span class="preview-val">${mandor||'-'}</span></div>`;
   pv.style.display='block'
 }
 function handleSubmit(e){
@@ -361,31 +361,31 @@ function handleSubmit(e){
   }
   if(state.editingId){
     const i=state.produksi.findIndex(p=>p.id===state.editingId);
-    if(i!==-1){state.produksi[i]={...state.produksi[i],tanggal:tgl,blokId:bid,beratTBS:kg,jumlahJanjang:jjg,luasPanen:lp,restanKg:rkg,restanJjg:rjjg,jenisTK:tk,mandor,jumlahPemanen:pem,catatan:cat};Storage.save('produksi',state.produksi);toast('Data diperbarui! âœ“','success');state.editingId=null;document.getElementById('submitBtn').querySelector('.btn-text').textContent='ðŸ’¾ Simpan Data'}
+    if(i!==-1){state.produksi[i]={...state.produksi[i],tanggal:tgl,blokId:bid,beratTBS:kg,jumlahJanjang:jjg,luasPanen:lp,restanKg:rkg,restanJjg:rjjg,jenisTK:tk,mandor,jumlahPemanen:pem,catatan:cat};Storage.save('produksi',state.produksi);toast('Data diperbarui! ✏“','success');state.editingId=null;document.getElementById('submitBtn').querySelector('.btn-text').textContent='💾 Simpan Data'}
   }else{
     state.produksi.push({id:uid(),tanggal:tgl,blokId:bid,beratTBS:kg,jumlahJanjang:jjg,luasPanen:lp,restanKg:rkg,restanJjg:rjjg,jenisTK:tk,mandor,jumlahPemanen:pem,catatan:cat,createdAt:new Date().toISOString()});
-    Storage.save('produksi',state.produksi);toast('Data tersimpan! âœ“','success')
+    Storage.save('produksi',state.produksi);toast('Data tersimpan! ✏“','success')
   }
   resetForm();updateTodayStats()
 }
-function resetForm(){document.getElementById('produksiForm').reset();document.getElementById('inputTanggal').valueAsDate=new Date();document.getElementById('previewCard').style.display='none';document.getElementById('blokInfo').innerHTML='<p class="empty-info">Pilih field</p>';document.getElementById('inputJenisTK').style.outline='';document.querySelectorAll('.tk-radio-option').forEach(e=>e.classList.remove('selected'));document.getElementById('displayBJR').textContent='â€” kg/jjg';document.getElementById('displayBJRRestan').textContent='â€” kg/jjg';document.getElementById('displayAKP').textContent='â€” %';state.editingId=null;document.getElementById('submitBtn').querySelector('.btn-text').textContent='ðŸ’¾ Simpan Data';updateHintDay()}
+function resetForm(){document.getElementById('produksiForm').reset();document.getElementById('inputTanggal').value=today();document.getElementById('previewCard').style.display='none';document.getElementById('blokInfo').innerHTML='<p class="empty-info">Pilih field</p>';document.getElementById('inputJenisTK').style.outline='';document.querySelectorAll('.tk-radio-option').forEach(e=>e.classList.remove('selected'));document.getElementById('displayBJR').textContent='- kg/jjg';document.getElementById('displayBJRRestan').textContent='- kg/jjg';document.getElementById('displayAKP').textContent='- %';state.editingId=null;document.getElementById('submitBtn').querySelector('.btn-text').textContent='💾 Simpan Data';updateHintDay()}
 
 function renderMasterPage(){renderMasterTable();document.getElementById('addBlokBtn').onclick=()=>openBlokModal(null);setupCSVImport()}
 function renderMasterTable(){
   const tb=document.getElementById('masterTbody');if(!state.bloks.length){tb.innerHTML='<tr><td colspan="6" class="empty-row">Belum ada data field.</td></tr>';return}
   const m=mk();
-  tb.innerHTML=state.bloks.map(b=>{const sph=b.luas>0?(b.jumlahPohon/b.luas).toFixed(1):'â€”';const t=(b.tp&&b.tp[m])||0;
-    return`<tr><td><strong>${b.nama}</strong></td><td>${b.luas} Ha</td><td>${fNum(b.jumlahPohon)}</td><td><span class="badge badge-green">${sph}</span></td><td>${fNum(t)} kg</td><td><div class="action-btns"><button class="btn-edit" onclick="openBlokModal('${b.id}')">âœ Edit</button><button class="btn-delete" onclick="deleteBlok('${b.id}')">ðŸ—‘</button></div></td></tr>`}).join('')
+  tb.innerHTML=state.bloks.map(b=>{const sph=b.luas>0?(b.jumlahPohon/b.luas).toFixed(1):'-';const t=(b.tp&&b.tp[m])||0;
+    return`<tr><td><strong>${b.nama}</strong></td><td>${b.luas} Ha</td><td>${fNum(b.jumlahPohon)}</td><td><span class="badge badge-green">${sph}</span></td><td>${fNum(t)} kg</td><td><div class="action-btns"><button class="btn-edit" onclick="openBlokModal('${b.id}')">✏Edit</button><button class="btn-delete" onclick="deleteBlok('${b.id}')">🗑</button></div></td></tr>`}).join('')
 }
 function openBlokModal(id){
-  const b=id?getB(id):null;const tp=b?b.tp:{};const sphV=b&&b.luas>0?(b.jumlahPohon/b.luas).toFixed(1):'â€”';
+  const b=id?getB(id):null;const tp=b?b.tp:{};const sphV=b&&b.luas>0?(b.jumlahPohon/b.luas).toFixed(1):'-';
   document.getElementById('modalTitle').textContent=b?'Edit Field':'Tambah Field Baru';
   const mg=MONTHS_ID.map(m=>`<div class="form-group"><label class="form-label">${m}</label><div class="input-with-icon"><input type="number" id="mT_${m}" class="form-control" value="${tp[m]||''}" placeholder="0" min="0"/><span class="input-suffix" style="font-size:10px">kg</span></div></div>`).join('');
-  document.getElementById('modalBody').innerHTML=`<div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><div class="form-group"><label class="form-label">Nama Field *</label><input type="text" id="mNama" class="form-control" value="${b?b.nama:''}" placeholder="Field A"/></div><div class="form-group"><label class="form-label">Luas (Ha) *</label><input type="number" id="mLuas" class="form-control" value="${b?b.luas:''}" placeholder="45.5" min="0" step="0.01" oninput="updSPH()"/></div><div class="form-group"><label class="form-label">Jumlah Pohon *</label><input type="number" id="mPohon" class="form-control" value="${b?b.jumlahPohon:''}" placeholder="1200" min="0" oninput="updSPH()"/></div><div class="form-group"><label class="form-label">SPH (otomatis)</label><div class="form-control" id="sphP" style="background:var(--bg-primary);color:var(--green-light);font-weight:700">${sphV} pohon/Ha</div></div></div><div style="margin-bottom:12px;padding:12px;background:var(--bg-input);border-radius:var(--radius-sm);border:1px solid var(--border)"><div style="font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:12px">ðŸŽ¯ Target per Bulan (kg)</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:10px">${mg}</div></div>`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveBlok('${id||''}')">ðŸ’¾ Simpan</button>`;
+  document.getElementById('modalBody').innerHTML=`<div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><div class="form-group"><label class="form-label">Nama Field *</label><input type="text" id="mNama" class="form-control" value="${b?b.nama:''}" placeholder="Field A"/></div><div class="form-group"><label class="form-label">Luas (Ha) *</label><input type="number" id="mLuas" class="form-control" value="${b?b.luas:''}" placeholder="45.5" min="0" step="0.01" oninput="updSPH()"/></div><div class="form-group"><label class="form-label">Jumlah Pohon *</label><input type="number" id="mPohon" class="form-control" value="${b?b.jumlahPohon:''}" placeholder="1200" min="0" oninput="updSPH()"/></div><div class="form-group"><label class="form-label">SPH (otomatis)</label><div class="form-control" id="sphP" style="background:var(--bg-primary);color:var(--green-light);font-weight:700">${sphV} pohon/Ha</div></div></div><div style="margin-bottom:12px;padding:12px;background:var(--bg-input);border-radius:var(--radius-sm);border:1px solid var(--border)"><div style="font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:12px">🎯 Target per Bulan (kg)</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:10px">${mg}</div></div>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveBlok('${id||''}')">💾 Simpan</button>`;
   document.getElementById('modal').classList.add('modal-wide');openModal()
 }
-function updSPH(){const l=parseFloat(document.getElementById('mLuas')?.value)||0,p=parseInt(document.getElementById('mPohon')?.value)||0;const e=document.getElementById('sphP');if(e)e.textContent=(l>0?(p/l).toFixed(1):'â€”')+' pohon/Ha'}
+function updSPH(){const l=parseFloat(document.getElementById('mLuas')?.value)||0,p=parseInt(document.getElementById('mPohon')?.value)||0;const e=document.getElementById('sphP');if(e)e.textContent=(l>0?(p/l).toFixed(1):'-')+' pohon/Ha'}
 function saveBlok(id){
   const n=document.getElementById('mNama').value.trim(),l=parseFloat(document.getElementById('mLuas').value),p=parseInt(document.getElementById('mPohon').value);
   if(!n||isNaN(l)||isNaN(p)){toast('Isi nama, luas, pohon','error');return}
@@ -423,7 +423,7 @@ function setupCSVImport() {
   guideBtn.onclick = () => {
     const g = document.getElementById('csvGuide');
     g.style.display = g.style.display === 'none' ? 'block' : 'none';
-    guideBtn.textContent = g.style.display === 'none' ? 'â“ Panduan' : 'âœ• Tutup Panduan';
+    guideBtn.textContent = g.style.display === 'none' ? 'â“ Panduan' : '✏• Tutup Panduan';
   };
 
   templateBtn.onclick = downloadCSVTemplate;
@@ -557,9 +557,9 @@ function renderCSVPreview(headers, errorCount) {
   importCountEl.textContent = validCount;
 
   if (errorCount > 0) {
-    status.innerHTML = `<span class="csv-status-error">âš  ${errorCount} baris error</span><span class="csv-status-ok">âœ“ ${validCount} valid</span>`;
+    status.innerHTML = `<span class="csv-status-error">⚠️${errorCount} baris error</span><span class="csv-status-ok">✏“ ${validCount} valid</span>`;
   } else {
-    status.innerHTML = `<span class="csv-status-ok">âœ“ Semua ${validCount} baris valid</span>`;
+    status.innerHTML = `<span class="csv-status-ok">✏“ Semua ${validCount} baris valid</span>`;
   }
 
   thead.innerHTML = '<tr><th>Status</th><th>Nama</th><th>Luas (Ha)</th><th>Pohon</th><th>SPH</th>' +
@@ -567,15 +567,15 @@ function renderCSVPreview(headers, errorCount) {
 
   tbody.innerHTML = csvParsedData.map((row, i) => {
     const cls = row.valid ? 'csv-row-ok' : 'csv-row-error';
-    const sph = row.luas > 0 ? (row.jumlahPohon / row.luas).toFixed(1) : 'â€”';
-    const statusIcon = row.valid ? '<span class="status-badge status-ok">âœ“</span>' : '<span class="status-badge status-warn">âš </span>';
+    const sph = row.luas > 0 ? (row.jumlahPohon / row.luas).toFixed(1) : '-';
+    const statusIcon = row.valid ? '<span class="status-badge status-ok">✏“</span>' : '<span class="status-badge status-warn">⚠️</span>';
     return `<tr class="${cls}">
       <td>${statusIcon}</td>
-      <td><strong>${row.nama || 'â€”'}</strong></td>
-      <td>${row.luas || 'â€”'}</td>
-      <td>${row.jumlahPohon ? fNum(row.jumlahPohon) : 'â€”'}</td>
+      <td><strong>${row.nama || '-'}</strong></td>
+      <td>${row.luas || '-'}</td>
+      <td>${row.jumlahPohon ? fNum(row.jumlahPohon) : '-'}</td>
       <td><span class="badge badge-green">${sph}</span></td>
-      ${MONTHS_ID.map(m => `<td>${row.tp[m] ? fNum(row.tp[m]) : 'â€”'}</td>`).join('')}
+      ${MONTHS_ID.map(m => `<td>${row.tp[m] ? fNum(row.tp[m]) : '-'}</td>`).join('')}
     </tr>`;
   }).join('');
 
@@ -602,7 +602,7 @@ function executeCSVImport() {
     );
     setTimeout(() => {
       const btn = document.getElementById('cfmOk');
-      if (btn) { btn.textContent = 'ðŸ”„ Ganti Semua'; btn.className = 'btn btn-primary'; }
+      if (btn) { btn.textContent = '🔄 Ganti Semua'; btn.className = 'btn btn-primary'; }
     }, 50);
   } else {
     importCSVRows(validRows);
@@ -634,7 +634,7 @@ function importCSVRows(rows) {
   renderMasterTable();
   resetCSVImport();
 
-  let msg = `âœ“ ${added} field baru ditambahkan`;
+  let msg = `✏“ ${added} field baru ditambahkan`;
   if (skipped > 0) msg += `, ${skipped} diperbarui`;
   toast(msg, 'success');
 }
@@ -668,7 +668,7 @@ function renderLaporanTable(){
   document.getElementById('lap-rata').textContent=fNum(avg)+' kg';
   const tb=document.getElementById('laporanTbody'),tf=document.getElementById('laporanTfoot');
   if(!d.length){tb.innerHTML='<tr><td colspan="12" class="empty-row">Tidak ada data</td></tr>';tf.innerHTML='';return}
-  tb.innerHTML=d.map((p,i)=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'â€”';return`<tr><td>${i+1}</td><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'â€”'}</td><td><strong>${fNum(p.beratTBS)}</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'â€”'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td>${p.catatan||'â€”'}</td></tr>`}).join('');
+  tb.innerHTML=d.map((p,i)=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'-';return`<tr><td>${i+1}</td><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'-'}</td><td><strong>${fNum(p.beratTBS)}</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'-'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td>${p.catatan||'-'}</td></tr>`}).join('');
   tf.innerHTML=`<tr><td colspan="3"><strong>TOTAL</strong></td><td><strong>${fNum(tTBS)} kg</strong></td><td><strong>${fNum(tJjg)}</strong></td><td></td><td><strong>${calcBJR(tTBS,tJjg)}</strong></td><td></td><td><strong>${fNum(tR)} kg</strong></td><td colspan="3"></td></tr>`
 }
 
@@ -679,7 +679,7 @@ function renderEntriTable(q){
   let d=[...state.produksi].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,20);
   if(q)d=d.filter(p=>{const b=getB(p.blokId);return(b&&b.nama.toLowerCase().includes(q))||p.mandor.toLowerCase().includes(q)||p.tanggal.includes(q)});
   if(!d.length){tb.innerHTML='<tr><td colspan="11" class="empty-row">Tidak ada data</td></tr>';return}
-  tb.innerHTML=d.map(p=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const ok=p.beratTBS>=1000;const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'â€”';return`<tr><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'â€”'}</td><td><strong>${fNum(p.beratTBS)} kg</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'â€”'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td><span class="status-badge ${ok?'status-ok':'status-warn'}">${ok?'âœ“':'âš '}</span></td></tr>`}).join('')
+  tb.innerHTML=d.map(p=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const ok=p.beratTBS>=1000;const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'-';return`<tr><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'-'}</td><td><strong>${fNum(p.beratTBS)} kg</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'-'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td><span class="status-badge ${ok?'status-ok':'status-warn'}">${ok?'✏“':'⚠️'}</span></td></tr>`}).join('')
 }
 
 // ===== RIWAYAT =====
@@ -689,7 +689,7 @@ function renderRiwayatTable(q){
   let d=[...state.produksi].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   if(q)d=d.filter(p=>{const b=getB(p.blokId);return(b&&b.nama.toLowerCase().includes(q))||p.mandor.toLowerCase().includes(q)||p.tanggal.includes(q)});
   if(!d.length){tb.innerHTML='<tr><td colspan="14" class="empty-row">Tidak ada data</td></tr>';return}
-  tb.innerHTML=d.map((p,i)=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'â€”';return`<tr><td style="text-align:center"><input type="checkbox" class="cb-riwayat" value="${p.id}" onchange="checkRiwayatSel()"></td><td>${i+1}</td><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'â€”'}</td><td><strong>${fNum(p.beratTBS)} kg</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'â€”'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td style="font-size:11px;color:var(--text-muted)">${fDT(p.createdAt)}</td><td><div class="action-btns"><button class="btn-edit" onclick="editProduksi('${p.id}')">âœ</button><button class="btn-delete" onclick="deleteProduksi('${p.id}')">ðŸ—‘</button></div></td></tr>`}).join('')
+  tb.innerHTML=d.map((p,i)=>{const b=getB(p.blokId);const bjr=calcBJR(p.beratTBS,p.jumlahJanjang);const sph=b?getSPH(b):0;const akp=calcAKP(p.jumlahJanjang,p.luasPanen||0,sph);const tkB=p.jenisTK?`<span class="badge ${p.jenisTK==='SKU'?'badge-blue':'badge-gold'}">${p.jenisTK}</span>`:'-';return`<tr><td style="text-align:center"><input type="checkbox" class="cb-riwayat" value="${p.id}" onchange="checkRiwayatSel()"></td><td>${i+1}</td><td>${formatDD(p.tanggal)}</td><td>${b?b.nama:'-'}</td><td><strong>${fNum(p.beratTBS)} kg</strong></td><td>${fNum(p.jumlahJanjang)}</td><td>${p.luasPanen||'-'}</td><td>${bjr}</td><td>${akp}%</td><td>${fNum(p.restanKg||0)}</td><td>${tkB}</td><td>${p.mandor}</td><td style="font-size:11px;color:var(--text-muted)">${fDT(p.createdAt)}</td><td><div class="action-btns"><button class="btn-edit" onclick="editProduksi('${p.id}')">✏</button><button class="btn-delete" onclick="deleteProduksi('${p.id}')">🗑</button></div></td></tr>`}).join('')
   const sa=document.getElementById('selectAllRiwayat');if(sa)sa.checked=false;
   checkRiwayatSel();
 }
@@ -697,7 +697,7 @@ function checkRiwayatSel(){
   const cbs=document.querySelectorAll('.cb-riwayat'),chk=document.querySelectorAll('.cb-riwayat:checked');
   const sa=document.getElementById('selectAllRiwayat');if(sa)sa.checked=(cbs.length>0&&chk.length===cbs.length);
   const btn=document.getElementById('btnHapusTerpilih');
-  if(btn){btn.style.display=chk.length>0?'inline-flex':'none';btn.textContent=`ðŸ—‘ï¸ Hapus Terpilih (${chk.length})`}
+  if(btn){btn.style.display=chk.length>0?'inline-flex':'none';btn.textContent=`🗑️ Hapus Terpilih (${chk.length})`}
 }
 function deleteSelectedRiwayat(){
   const chk=document.querySelectorAll('.cb-riwayat:checked');if(!chk.length)return;
@@ -712,16 +712,16 @@ function deleteSelectedRiwayat(){
 }
 function editProduksi(id){
   const p=state.produksi.find(x=>x.id===id);if(!p)return;navigate('input');
-  setTimeout(()=>{state.editingId=id;document.getElementById('inputTanggal').value=p.tanggal;populateBlokSelect('inputBlok');document.getElementById('inputBlok').value=p.blokId;updateBlokInfo();document.getElementById('inputBerat').value=p.beratTBS;document.getElementById('inputJanjang').value=p.jumlahJanjang;document.getElementById('inputLuasPanen').value=p.luasPanen||'';document.getElementById('inputRestanKg').value=p.restanKg||'';document.getElementById('inputRestanJjg').value=p.restanJjg||'';if(p.jenisTK){const r=document.querySelector(`input[name="jenisTK"][value="${p.jenisTK}"]`);if(r){r.checked=true;r.closest('.tk-radio-option').classList.add('selected')}}document.getElementById('inputMandor').value=p.mandor;document.getElementById('inputPemanen').value=p.jumlahPemanen||'';document.getElementById('inputCatatan').value=p.catatan||'';document.getElementById('submitBtn').querySelector('.btn-text').textContent='âœ” Perbarui Data';calcLiveFields();toast('Mode edit aktif','warning')},100)
+  setTimeout(()=>{state.editingId=id;document.getElementById('inputTanggal').value=p.tanggal;populateBlokSelect('inputBlok');document.getElementById('inputBlok').value=p.blokId;updateBlokInfo();document.getElementById('inputBerat').value=p.beratTBS;document.getElementById('inputJanjang').value=p.jumlahJanjang;document.getElementById('inputLuasPanen').value=p.luasPanen||'';document.getElementById('inputRestanKg').value=p.restanKg||'';document.getElementById('inputRestanJjg').value=p.restanJjg||'';if(p.jenisTK){const r=document.querySelector(`input[name="jenisTK"][value="${p.jenisTK}"]`);if(r){r.checked=true;r.closest('.tk-radio-option').classList.add('selected')}}document.getElementById('inputMandor').value=p.mandor;document.getElementById('inputPemanen').value=p.jumlahPemanen||'';document.getElementById('inputCatatan').value=p.catatan||'';document.getElementById('submitBtn').querySelector('.btn-text').textContent='✏” Perbarui Data';calcLiveFields();toast('Mode edit aktif','warning')},100)
 }
-function deleteProduksi(id){const p=state.produksi.find(x=>x.id===id);if(!p)return;const b=getB(p.blokId);showConfirmModal('Hapus Data',`Hapus data ${formatDD(p.tanggal)}, ${b?b.nama:'â€”'}, ${fNum(p.beratTBS)} kg?`,()=>{state.produksi=state.produksi.filter(x=>x.id!==id);Storage.save('produksi',state.produksi);renderRiwayatTable(document.getElementById('searchInput').value.toLowerCase());toast('Data dihapus','success');closeModal()})}
+function deleteProduksi(id){const p=state.produksi.find(x=>x.id===id);if(!p)return;const b=getB(p.blokId);showConfirmModal('Hapus Data',`Hapus data ${formatDD(p.tanggal)}, ${b?b.nama:'-'}, ${fNum(p.beratTBS)} kg?`,()=>{state.produksi=state.produksi.filter(x=>x.id!==id);Storage.save('produksi',state.produksi);renderRiwayatTable(document.getElementById('searchInput').value.toLowerCase());toast('Data dihapus','success');closeModal()})}
 
 // ===== MODAL =====
 function openModal(){document.getElementById('modalOverlay').classList.add('active')}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('active');document.getElementById('modal').classList.remove('modal-wide')}
-function showConfirmModal(t,m,cb){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=`<p style="color:var(--text-secondary);line-height:1.7">${m}</p>`;document.getElementById('modalFooter').innerHTML=`<button class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-danger" id="cfmOk">ðŸ—‘ Hapus</button>`;document.getElementById('cfmOk').onclick=cb;openModal()}
+function showConfirmModal(t,m,cb){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=`<p style="color:var(--text-secondary);line-height:1.7">${m}</p>`;document.getElementById('modalFooter').innerHTML=`<button class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-danger" id="cfmOk">🗑 Hapus</button>`;document.getElementById('cfmOk').onclick=cb;openModal()}
 
 // ===== TOAST =====
-function toast(m,t='success'){const ic={success:'âœ…',error:'âŒ',warning:'âš ï¸'};const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast toast-${t}`;e.innerHTML=`<span class="toast-icon">${ic[t]}</span><span class="toast-msg">${m}</span>`;c.appendChild(e);e.addEventListener('click',()=>e.remove());setTimeout(()=>{e.style.opacity='0';e.style.transform='translateX(20px)';e.style.transition='0.3s';setTimeout(()=>e.remove(),300)},3500)}
+function toast(m,t='success'){const ic={success:'✏…',error:'❌',warning:'⚠️'};const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast toast-${t}`;e.innerHTML=`<span class="toast-icon">${ic[t]}</span><span class="toast-msg">${m}</span>`;c.appendChild(e);e.addEventListener('click',()=>e.remove());setTimeout(()=>{e.style.opacity='0';e.style.transform='translateX(20px)';e.style.transition='0.3s';setTimeout(()=>e.remove(),300)},3500)}
 
 document.addEventListener('DOMContentLoaded',init);
