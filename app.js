@@ -90,6 +90,7 @@ function navigate(p){
   const titles={dashboard:'Dashboard',input:'Input Produksi',master:'Master Data',laporan:'Laporan',entri:'Entri Terbaru',riwayat:'Riwayat'};
   if(!pages.includes(p))p='dashboard';state.currentPage=p;
   pages.forEach(x=>{const n=document.getElementById('nav-'+x),s=document.getElementById('page-'+x);if(n)n.classList.toggle('active',x===p);if(s)s.classList.toggle('active',x===p)});
+  document.querySelectorAll('.bottom-nav-item').forEach(el=>{if(el.dataset.page) el.classList.toggle('active',el.dataset.page===p)});
   document.getElementById('topbarTitle').textContent=titles[p]||p;location.hash=p;renderPage(p);closeSidebar()
 }
 function renderPage(p){

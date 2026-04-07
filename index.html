@@ -17,9 +17,45 @@
 </head>
 
 <body>
+  <!-- Login Interface -->
+  <div class="login-container" id="loginContainer">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">🌴</div>
+        <h1 class="login-title" id="loginTitleText">SawIt Pro</h1>
+        <p class="login-subtitle" id="loginSubtitleText">Masuk untuk mengelola produksi kelapa sawit</p>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email</label>
+          <div class="input-with-icon">
+            <input type="email" id="loginEmail" class="form-control" placeholder="user@sawitpro.com" required>
+            <span class="input-suffix">✉️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Kata Sandi</label>
+          <div class="input-with-icon">
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+            <span class="input-suffix">🔑</span>
+          </div>
+        </div>
+        <div class="form-error" id="loginError" style="display:none; color:#f87171; font-size:12px; margin-bottom:12px; font-weight: 500;"></div>
+        <button type="submit" class="btn btn-primary" id="loginBtn" style="width:100%; padding: 12px; margin-top: 8px;">Mulai Sesi
+        </button>
+        <div style="text-align: center; margin-top: 16px;">
+          <a href="#" id="toggleAuthBtn" style="color: var(--green-light); font-size: 13px; text-decoration: none;">Belum punya akun? Daftar di sini</a>
+        </div>
+      </form>
+      <div class="login-footer">
+        Harap ganti config di source code untuk auth sungguhan.
+      </div>
+    </div>
+  </div>
 
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
+  <div id="appContainer" style="display: none;">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo">
         <div class="logo-icon">🌴</div>
@@ -68,6 +104,7 @@
       <div class="topbar-actions">
         <div class="topbar-time" id="topbarTime"></div>
         <button class="btn-icon" id="notifBtn" title="Notifikasi">🔔</button>
+        <button class="btn-icon" id="logoutBtn" title="Keluar" style="color:#f87171; border-color:rgba(248,113,113,0.3);">🚪</button>
       </div>
     </header>
 
@@ -857,6 +894,23 @@ Field E,55,1500,95000,90000,100000,105000,108000,110000,115000,112000,108000,105
       </section>
 
     </main>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <nav class="bottom-nav" id="bottomNav">
+      <a href="#dashboard" class="bottom-nav-item active" data-page="dashboard">
+        <span class="nav-icon">📊</span><span class="nav-label">Dash</span>
+      </a>
+      <a href="#input" class="bottom-nav-item action-item" data-page="input">
+        <div class="fab-icon">✏️</div>
+        <span class="nav-label">Input</span>
+      </a>
+      <a href="#laporan" class="bottom-nav-item" data-page="laporan">
+        <span class="nav-icon">📋</span><span class="nav-label">Report</span>
+      </a>
+      <a href="javascript:void(0)" class="bottom-nav-item" id="bottomNavMenu">
+        <span class="nav-icon">☰</span><span class="nav-label">Menu</span>
+      </a>
+    </nav>
   </div>
 
   <!-- Modal -->
@@ -873,6 +927,150 @@ Field E,55,1500,95000,90000,100000,105000,108000,110000,115000,112000,108000,105
 
   <div class="toast-container" id="toastContainer"></div>
   <script src="app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxw7vWR_aaULHIUQCuRnT-ribW760qIEs",
+      authDomain: "monitoring-produksi-9e39e.firebaseapp.com",
+      projectId: "monitoring-produksi-9e39e",
+      storageBucket: "monitoring-produksi-9e39e.firebasestorage.app",
+      messagingSenderId: "424806123054",
+      appId: "1:424806123054:web:3fd23941ae3b47927d01bf",
+      measurementId: "G-XW7B8MFT8G"
+    };
+
+    let app, db, auth;
+    
+    // Fallback Mock Logic turned off automatically because real config provided
+    let isMock = false;
+    
+    if (!isMock) {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+      window.db = db;
+      window.auth = auth;
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          document.getElementById("loginContainer").style.display = "none";
+          document.getElementById("appContainer").style.display = "block";
+        } else {
+          document.getElementById("loginContainer").style.display = "flex";
+          document.getElementById("appContainer").style.display = "none";
+        }
+      });
+    } else {
+      // Mock Auth State
+      console.warn("MOCK FIREBASE RUNNING: Replace config to use real Firebase API.");
+    }
+
+    const loginForm = document.getElementById("loginForm");
+    const loginError = document.getElementById("loginError");
+    const loginBtn = document.getElementById("loginBtn");
+    const toggleAuthBtn = document.getElementById("toggleAuthBtn");
+    const loginTitleText = document.getElementById("loginTitleText");
+    const loginSubtitleText = document.getElementById("loginSubtitleText");
+
+    let isRegisterMode = false;
+
+    if (toggleAuthBtn) {
+      toggleAuthBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        if (isRegisterMode) {
+          loginTitleText.textContent = "Daftar Akun";
+          loginSubtitleText.textContent = "Buat akun baru untuk pencatatan panen";
+          loginBtn.textContent = "Daftarkan Saya";
+          toggleAuthBtn.textContent = "Sudah punya akun? Masuk di sini";
+        } else {
+          loginTitleText.textContent = "SawIt Pro";
+          loginSubtitleText.textContent = "Masuk untuk mengelola produksi kelapa sawit";
+          loginBtn.textContent = "Mulai Sesi";
+          toggleAuthBtn.textContent = "Belum punya akun? Daftar di sini";
+        }
+        loginError.style.display = "none";
+      });
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        loginError.style.display = "none";
+        loginBtn.textContent = "Memproses...";
+
+        const email = document.getElementById("loginEmail").value;
+        const pwd = document.getElementById("loginPassword").value;
+
+        if (!isMock) {
+          if (isRegisterMode) {
+            createUserWithEmailAndPassword(auth, email, pwd)
+              .then((userCredential) => {
+                loginBtn.textContent = "Daftarkan Saya";
+              })
+              .catch((error) => {
+                loginError.textContent = "Gagal daftar: " + error.message;
+                loginError.style.display = "block";
+                loginBtn.textContent = "Daftarkan Saya";
+              });
+          } else {
+            signInWithEmailAndPassword(auth, email, pwd)
+              .then((userCredential) => {
+                loginBtn.textContent = "Mulai Sesi";
+              })
+              .catch((error) => {
+                loginError.textContent = "Gagal login: " + error.message;
+                loginError.style.display = "block";
+                loginBtn.textContent = "Mulai Sesi";
+              });
+          }
+        } else {
+          // Mock Login
+          setTimeout(() => {
+            document.getElementById("loginContainer").style.display = "none";
+            document.getElementById("appContainer").style.display = "block";
+            document.getElementById("loginContainer").style.opacity = "0";
+            loginBtn.textContent = "Mulai Sesi";
+            
+            // Re-trigger layout calc
+            window.dispatchEvent(new Event('resize')); 
+          }, 800);
+        }
+      });
+    }
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        if (!isMock) {
+          signOut(auth).then(() => {});
+        } else {
+          document.getElementById("loginContainer").style.opacity = "1";
+          document.getElementById("loginContainer").style.display = "flex";
+          document.getElementById("appContainer").style.display = "none";
+          document.getElementById("loginPassword").value = "";
+        }
+      });
+    }
+
+    // Bind bottom nav click items
+    document.querySelectorAll('.bottom-nav-item').forEach(l => {
+      l.addEventListener('click', e => {
+         const p = l.dataset.page;
+         if(p && window.navigate) window.navigate(p);
+      });
+    });
+    const bottomNavMenu = document.getElementById("bottomNavMenu");
+    if(bottomNavMenu) {
+      bottomNavMenu.addEventListener('click', e => {
+        e.preventDefault();
+        if (window.openSidebar) window.openSidebar();
+      });
+    }
+  </script>
 </body>
 
 </html>
