@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SawIt Pro — Sistem Input Produksi Kelapa Sawit</title>
+  <meta name="description"
+    content="Aplikasi modern untuk pencatatan, monitoring, dan pelaporan data produksi kelapa sawit secara real-time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">🌴</div>
+        <div class="logo-text">
+          <span class="logo-title">SawIt Pro</span>
+          <span class="logo-sub">Manajemen Produksi</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Tutup sidebar">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#dashboard" class="nav-item active" id="nav-dashboard" data-page="dashboard">
+        <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#input" class="nav-item" id="nav-input" data-page="input">
+        <span class="nav-icon">✏️</span><span class="nav-label">Input Produksi</span>
+      </a>
+      <a href="#master" class="nav-item" id="nav-master" data-page="master">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Master Data</span>
+      </a>
+      <a href="#laporan" class="nav-item" id="nav-laporan" data-page="laporan">
+        <span class="nav-icon">📋</span><span class="nav-label">Laporan</span>
+      </a>
+      <a href="#entri" class="nav-item" id="nav-entri" data-page="entri">
+        <span class="nav-icon">📝</span><span class="nav-label">Entri Terbaru</span>
+      </a>
+      <a href="#riwayat" class="nav-item" id="nav-riwayat" data-page="riwayat">
+        <span class="nav-icon">🕐</span><span class="nav-label">Riwayat</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-date" id="sidebarDate"></div>
+      <div class="sidebar-version">v2.1.0</div>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Buka menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-time" id="topbarTime"></div>
+        <button class="btn-icon" id="notifBtn" title="Notifikasi">🔔</button>
+      </div>
+    </header>
+
+    <main class="content" id="mainContent">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">Dashboard Produksi</h1>
+          <p class="page-subtitle">Monitoring & laporan produksi kelapa sawit</p>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card filter-bar-card" id="dashFilterCard">
+          <div class="filter-bar">
+            <div class="form-group mb-0">
+              <label class="form-label">Periode</label>
+              <select id="dashPeriode" class="form-control">
+                <option value="mtd">MTD (Bulan Ini)</option>
+                <option value="ytd">YTD (Tahun Ini)</option>
+                <option value="0">Januari</option>
+                <option value="1">Februari</option>
+                <option value="2">Maret</option>
+                <option value="3">April</option>
+                <option value="4">Mei</option>
+                <option value="5">Juni</option>
+                <option value="6">Juli</option>
+                <option value="7">Agustus</option>
+                <option value="8">September</option>
+                <option value="9">Oktober</option>
+                <option value="10">November</option>
+                <option value="11">Desember</option>
+                <option value="custom">Rentang Tanggal</option>
+              </select>
+            </div>
+            <div class="form-group mb-0 date-range" id="dashDateFrom" style="display:none">
+              <label class="form-label">Dari</label>
+              <input type="date" id="dashFrom" class="form-control" />
+            </div>
+            <div class="form-group mb-0 date-range" id="dashDateTo" style="display:none">
+              <label class="form-label">Sampai</label>
+              <input type="date" id="dashTo" class="form-control" />
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label">Field</label>
+              <select id="dashBlokFilter" class="form-control">
+                <option value="">Semua Field</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="dashFilterBtn">🔍 Tampilkan</button>
+            <button class="btn btn-outline" id="dashPrintBtn">🖨️ Cetak</button>
+          </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card stat-green">
+            <div class="stat-icon">🌿</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-today">0 kg</div>
+              <div class="stat-label">Produksi Hari Ini</div>
+              <div class="stat-change" id="stat-today-change">—</div>
+            </div>
+          </div>
+          <div class="stat-card stat-gold">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-month">0 kg</div>
+              <div class="stat-label">Produksi MTD</div>
+              <div class="stat-change" id="stat-month-change">—</div>
+            </div>
+          </div>
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">🏗️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-blok">0</div>
+              <div class="stat-label">Total Field Aktif</div>
+              <div class="stat-change">Master Data</div>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-target">0%</div>
+              <div class="stat-label">Pencapaian Target</div>
+              <div class="stat-change" id="stat-target-change">bulan ini</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Budget Card -->
+        <div class="card daily-budget-card" id="dailyBudgetCard">
+          <div class="card-header">
+            <h2 class="card-title">📅 Budget Harian — Bulan Berjalan</h2>
+            <div class="daily-budget-meta">
+              <span class="badge badge-green" id="dbWorkDaysLabel">0 hari kerja</span>
+              <span class="badge badge-gold" id="dbMonthLabel">—</span>
+            </div>
+          </div>
+          <div class="daily-budget-grid">
+            <!-- Budget per Hari -->
+            <div class="db-item db-item-budget">
+              <div class="db-icon">🎯</div>
+              <div class="db-content">
+                <div class="db-value" id="db-budget-daily">0 kg</div>
+                <div class="db-label">Budget / Hari Kerja</div>
+                <div class="db-sub" id="db-budget-formula">—</div>
+              </div>
+            </div>
+            <!-- Aktual Hari Ini -->
+            <div class="db-item db-item-today">
+              <div class="db-icon">🌿</div>
+              <div class="db-content">
+                <div class="db-value" id="db-aktual-today">0 kg</div>
+                <div class="db-label">Aktual Hari Ini</div>
+                <div class="db-sub" id="db-today-vs">—</div>
+              </div>
+            </div>
+            <!-- Aktual Kemarin -->
+            <div class="db-item db-item-yesterday">
+              <div class="db-icon">📊</div>
+              <div class="db-content">
+                <div class="db-value" id="db-aktual-yesterday">0 kg</div>
+                <div class="db-label">Aktual Kemarin</div>
+                <div class="db-sub" id="db-yesterday-vs">—</div>
+              </div>
+            </div>
+            <!-- Varian MTD -->
+            <div class="db-item db-item-variance">
+              <div class="db-icon">📈</div>
+              <div class="db-content">
+                <div class="db-value" id="db-varian-mtd">0 kg</div>
+                <div class="db-label">Varian s/d Hari Ini</div>
+                <div class="db-sub" id="db-varian-desc">Aktual MTD − Budget MTD</div>
+              </div>
+            </div>
+            <!-- Aktual YTD -->
+            <div class="db-item db-item-ytd-act">
+              <div class="db-icon">📆</div>
+              <div class="db-content">
+                <div class="db-value" id="db-aktual-ytd">0 kg</div>
+                <div class="db-label">Aktual YTD</div>
+                <div class="db-sub" id="db-ytd-vs">—</div>
+              </div>
+            </div>
+            <!-- Budget YTD -->
+            <div class="db-item db-item-ytd-bud">
+              <div class="db-icon">💳</div>
+              <div class="db-content">
+                <div class="db-value" id="db-budget-ytd">0 kg</div>
+                <div class="db-label">Budget YTD</div>
+                <div class="db-sub" id="db-ytd-pct">—</div>
+              </div>
+            </div>
+          </div>
+          <!-- MTD Progress Bar -->
+          <div class="db-progress-section">
+            <div class="db-progress-header">
+              <span class="db-progress-label">Progress Aktual vs Budget s/d Hari Ini</span>
+              <span class="db-progress-pct" id="db-mtd-pct">0%</span>
+            </div>
+            <div class="db-progress-bar">
+              <div class="db-progress-fill" id="db-mtd-fill" style="width:0%"></div>
+            </div>
+            <div class="db-progress-footer">
+              <span id="db-mtd-aktual-label">Aktual: 0 kg</span>
+              <span id="db-mtd-budget-label">Budget: 0 kg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Cards: YPH & Round Panen -->
+        <div class="stats-grid kpi-grid">
+          <div class="stat-card stat-green">
+            <div class="stat-icon">📈</div>
+            <div class="stat-info">
+              <div class="stat-value" id="kpi-yph-aktual">0 t/ha</div>
+              <div class="stat-label">YPH Aktual (Perioda)</div>
+              <div class="stat-change" id="kpi-yph-budget-txt">Budget: 0 t/ha</div>
+            </div>
+          </div>
+          <div class="stat-card stat-gold">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-info">
+              <div class="stat-value" id="kpi-round">0x</div>
+              <div class="stat-label">Round Panen (Rata-rata)</div>
+              <div class="stat-change">luas panen ÷ luas field</div>
+            </div>
+          </div>
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">⚖️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="kpi-bjr">0 kg</div>
+              <div class="stat-label">BJR Rata-rata (Perioda)</div>
+              <div class="stat-change">produksi ÷ janjang</div>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <div class="stat-icon">🌱</div>
+            <div class="stat-info">
+              <div class="stat-value" id="kpi-akp">0%</div>
+              <div class="stat-label">AKP Rata-rata (Perioda)</div>
+              <div class="stat-change">janjang ÷ (luas × SPH)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div class="card chart-card">
+            <div class="card-header">
+              <h2 class="card-title">Tren Produksi Harian</h2>
+              <select class="filter-select" id="chartFilter">
+                <option value="7">7 Hari</option>
+                <option value="14">14 Hari</option>
+                <option value="30">30 Hari</option>
+              </select>
+            </div>
+            <div class="chart-wrapper"><canvas id="chartTren"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-header">
+              <h2 class="card-title">Produksi per Field</h2>
+              <span class="badge badge-green" id="chartBlokLabel">Perioda</span>
+            </div>
+            <div class="chart-wrapper"><canvas id="chartBlok"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Report: Produksi & YPH — Aktual vs Budget -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📊 Report Produksi & YPH</h2>
+            <div class="search-box" style="margin-left: auto; margin-right: 12px; width: 220px;">
+              <input type="text" id="reportSearchFilter" class="form-control" placeholder="🔍 Cari Field..."
+                style="padding: 6px 12px; font-size: 13px; height: 32px;" />
+            </div>
+            <span class="badge badge-green" id="reportPeriodeLabel">Perioda</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table report-table" id="reportTable">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="vertical-align: middle;">Field</th>
+                  <th rowspan="2" style="vertical-align: middle;">Luas (Ha)</th>
+                  <th colspan="3" class="text-center" style="border-bottom: 1px solid var(--border)">Produksi Perioda
+                    (kg)</th>
+                  <th colspan="3" class="text-center" style="border-bottom: 1px solid var(--border)">Produksi YTD (kg)
+                  </th>
+                  <th colspan="2" class="text-center" style="border-bottom: 1px solid var(--border)">YPH (t/ha)</th>
+                  <th rowspan="2" style="vertical-align: middle;">Rnd</th>
+                  <th rowspan="2" style="vertical-align: middle;">BJR</th>
+                  <th rowspan="2" style="vertical-align: middle;">AKP%</th>
+                </tr>
+                <tr>
+                  <th>Akt</th>
+                  <th>Bud</th>
+                  <th>%</th>
+                  <th>Akt</th>
+                  <th>Bud</th>
+                  <th>%</th>
+                  <th>Akt</th>
+                  <th>Bud</th>
+                </tr>
+              </thead>
+              <tbody id="reportTbody">
+                <tr>
+                  <td colspan="13" class="empty-row">Pilih periode dan memuat data...</td>
+                </tr>
+              </tbody>
+              <tfoot id="reportTfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Chart: Aktual vs Budget per Bulan -->
+        <div class="charts-row">
+          <div class="card chart-card chart-card-wide">
+            <div class="card-header">
+              <h2 class="card-title">Produksi Aktual vs Budget per Bulan</h2>
+              <span class="badge badge-gold">YTD</span>
+            </div>
+            <div class="chart-wrapper chart-wrapper-tall"><canvas id="chartYTD"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">YPH Aktual vs Budget</h2>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;" id="chartYPHTotal">Total Yield:
+                  0 t/ha</div>
+              </div>
+              <span class="badge badge-blue">per Field</span>
+            </div>
+            <div class="chart-wrapper"><canvas id="chartYPH"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== INPUT PRODUKSI PAGE ===== -->
+      <section class="page" id="page-input">
+        <div class="page-header">
+          <h1 class="page-title">Input Produksi Harian</h1>
+          <p class="page-subtitle">Catat data panen kelapa sawit per field</p>
+        </div>
+        <div class="form-layout">
+          <div class="card form-card">
+            <div class="card-header">
+              <h2 class="card-title">✏️ Form Input Data</h2>
+              <button class="btn btn-outline btn-sm" id="resetFormBtn">Reset</button>
+            </div>
+            <form id="produksiForm" novalidate>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="inputTanggal" class="form-label">Tanggal Panen <span class="required">*</span></label>
+                  <div class="date-picker-wrapper">
+                    <input type="date" id="inputTanggal" class="form-control date-input" required />
+                    <span class="date-icon">📅</span>
+                  </div>
+                  <span class="form-hint" id="hintHariTanggal"></span>
+                </div>
+                <div class="form-group">
+                  <label for="inputBlok" class="form-label">Field / Afdeling <span class="required">*</span></label>
+                  <select id="inputBlok" class="form-control" required>
+                    <option value="">— Pilih Field —</option>
+                  </select>
+                  <span class="form-hint">Pilih field yang dipanen</span>
+                </div>
+              </div>
+
+              <!-- Produksi Hari Ini -->
+              <div class="section-divider-wrap">
+                <div class="section-divider"><span>🌿 Produksi Hari Ini</span></div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="inputBerat" class="form-label">Produksi (kg) <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <input type="number" id="inputBerat" class="form-control" placeholder="contoh: 4500" min="0"
+                      step="0.01" required />
+                    <span class="input-suffix">kg</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="inputJanjang" class="form-label">Janjang <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <input type="number" id="inputJanjang" class="form-control" placeholder="contoh: 180" min="0"
+                      required />
+                    <span class="input-suffix">jjg</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">BJR Hari Ini</label>
+                  <div class="calc-display" id="displayBJR">— kg/jjg</div>
+                  <span class="form-hint">Produksi ÷ Janjang</span>
+                </div>
+                <div class="form-group">
+                  <label for="inputLuasPanen" class="form-label">Luas Panen (Ha) <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <input type="number" id="inputLuasPanen" class="form-control" placeholder="contoh: 5.5" min="0"
+                      step="0.01" required />
+                    <span class="input-suffix">Ha</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">% AKP</label>
+                  <div class="calc-display" id="displayAKP">— %</div>
+                  <span class="form-hint">Janjang ÷ (Luas × SPH)</span>
+                </div>
+              </div>
+
+              <!-- Restan Kemarin -->
+              <div class="section-divider-wrap">
+                <div class="section-divider"><span>🔁 Restan Kemarin</span></div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="inputRestanKg" class="form-label">Restan (kg)</label>
+                  <div class="input-with-icon">
+                    <input type="number" id="inputRestanKg" class="form-control" placeholder="0" min="0" step="0.01" />
+                    <span class="input-suffix">kg</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="inputRestanJjg" class="form-label">Restan (janjang)</label>
+                  <div class="input-with-icon">
+                    <input type="number" id="inputRestanJjg" class="form-control" placeholder="0" min="0" />
+                    <span class="input-suffix">jjg</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">BJR Restan</label>
+                  <div class="calc-display" id="displayBJRRestan">— kg/jjg</div>
+                  <span class="form-hint">Restan kg ÷ Restan janjang</span>
+                </div>
+              </div>
+
+              <!-- Tenaga Kerja -->
+              <div class="section-divider-wrap">
+                <div class="section-divider"><span>👷 Tenaga Kerja</span></div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="inputJenisTK" class="form-label">Jenis TK <span class="required">*</span></label>
+                  <div class="tk-radio-group" id="inputJenisTK">
+                    <label class="tk-radio-option" id="tkOptionSKU">
+                      <input type="radio" name="jenisTK" value="SKU" id="tkSKU" />
+                      <span class="tk-radio-box">
+                        <span class="tk-radio-title">SKU</span>
+                        <span class="tk-radio-sub">Karyawan Tetap</span>
+                      </span>
+                    </label>
+                    <label class="tk-radio-option" id="tkOptionSPK">
+                      <input type="radio" name="jenisTK" value="SPK" id="tkSPK" />
+                      <span class="tk-radio-box">
+                        <span class="tk-radio-title">SPK</span>
+                        <span class="tk-radio-sub">Kontrak/Borongan</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="inputMandor" class="form-label">Nama Mandor <span class="required">*</span></label>
+                  <input type="text" id="inputMandor" class="form-control" placeholder="contoh: Bapak Aris" required />
+                </div>
+                <div class="form-group">
+                  <label for="inputPemanen" class="form-label">Jumlah Pemanen</label>
+                  <input type="number" id="inputPemanen" class="form-control" placeholder="contoh: 12" min="0" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inputCatatan" class="form-label">Catatan</label>
+                <textarea id="inputCatatan" class="form-control" rows="2"
+                  placeholder="Catatan tambahan (opsional)..."></textarea>
+              </div>
+
+              <!-- Preview -->
+              <div class="preview-card" id="previewCard" style="display:none">
+                <div class="preview-title">📋 Pratinjau Data</div>
+                <div class="preview-grid" id="previewGrid"></div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="previewBtn">👁 Pratinjau</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                  <span class="btn-text">💾 Simpan Data</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Info Panel -->
+          <div class="info-panel">
+            <div class="card info-card">
+              <div class="card-header">
+                <h3 class="card-title">ℹ️ Info Field</h3>
+              </div>
+              <div id="blokInfo" class="blok-info-content">
+                <p class="empty-info">Pilih field untuk melihat informasi</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📊 Statistik Hari Ini</h3>
+              </div>
+              <div class="today-stats">
+                <div class="today-stat-item"><span class="today-stat-label">Total Entri</span><span
+                    class="today-stat-value" id="tstat-entri">0</span></div>
+                <div class="today-stat-item"><span class="today-stat-label">Total Produksi</span><span
+                    class="today-stat-value" id="tstat-tbs">0 kg</span></div>
+                <div class="today-stat-item"><span class="today-stat-label">Total Janjang</span><span
+                    class="today-stat-value" id="tstat-janjang">0 jjg</span></div>
+                <div class="today-stat-item"><span class="today-stat-label">Luas Panen</span><span
+                    class="today-stat-value" id="tstat-luas">0 Ha</span></div>
+                <div class="today-stat-item"><span class="today-stat-label">BJR Rata-rata</span><span
+                    class="today-stat-value" id="tstat-bjr">— kg</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MASTER DATA PAGE ===== -->
+      <section class="page" id="page-master">
+        <div class="page-header">
+          <h1 class="page-title">Master Data Field</h1>
+          <p class="page-subtitle">Konfigurasi field kebun dan target produksi</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">⚙️ Daftar Field</h2>
+            <button class="btn btn-primary btn-sm" id="addBlokBtn">+ Tambah Field</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="masterTable">
+              <thead>
+                <tr>
+                  <th>Nama Field</th>
+                  <th>Luas (Ha)</th>
+                  <th>Jml Pohon</th>
+                  <th>SPH</th>
+                  <th>Target Bulan Ini (kg)</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="masterTbody">
+                <tr>
+                  <td colspan="6" class="empty-row">Belum ada data field. Tambahkan field baru.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CSV Import Section -->
+        <div class="card csv-import-card" id="csvImportCard">
+          <div class="card-header">
+            <h2 class="card-title">📥 Import Data CSV</h2>
+            <div class="csv-header-actions">
+              <button class="btn btn-outline btn-sm" id="csvTemplateBtn">📄 Download Template</button>
+              <button class="btn btn-outline btn-sm" id="csvToggleGuideBtn">❓ Panduan</button>
+            </div>
+          </div>
+
+          <!-- Guide Section (collapsible) -->
+          <div class="csv-guide" id="csvGuide" style="display:none">
+            <div class="csv-guide-inner">
+              <h4 class="csv-guide-title">📋 Format CSV yang Diterima</h4>
+              <p class="csv-guide-desc">File CSV harus memiliki header di baris pertama. Kolom yang didukung:</p>
+              <div class="csv-columns-grid">
+                <div class="csv-col-item csv-col-required">
+                  <span class="csv-col-name">nama</span>
+                  <span class="csv-col-desc">Nama Field <span class="required">*</span></span>
+                </div>
+                <div class="csv-col-item csv-col-required">
+                  <span class="csv-col-name">luas</span>
+                  <span class="csv-col-desc">Luas (Ha) <span class="required">*</span></span>
+                </div>
+                <div class="csv-col-item csv-col-required">
+                  <span class="csv-col-name">pohon</span>
+                  <span class="csv-col-desc">Jumlah Pohon <span class="required">*</span></span>
+                </div>
+                <div class="csv-col-item">
+                  <span class="csv-col-name">Jan - Des</span>
+                  <span class="csv-col-desc">Target per bulan (kg)</span>
+                </div>
+              </div>
+              <div class="csv-example-box">
+                <div class="csv-example-label">Contoh CSV:</div>
+                <code class="csv-example-code">nama,luas,pohon,Jan,Feb,Mar,Apr,Mei,Jun,Jul,Agu,Sep,Okt,Nov,Des
+Field D,40.5,1100,80000,75000,85000,88000,90000,92000,95000,93000,90000,88000,85000,82000
+Field E,55,1500,95000,90000,100000,105000,108000,110000,115000,112000,108000,105000,100000,96000</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Area -->
+          <div class="csv-upload-area" id="csvUploadArea">
+            <div class="csv-upload-icon">📁</div>
+            <div class="csv-upload-text">
+              <span class="csv-upload-main">Drag & drop file CSV di sini</span>
+              <span class="csv-upload-sub">atau klik untuk memilih file</span>
+            </div>
+            <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none" />
+          </div>
+
+          <!-- File Info -->
+          <div class="csv-file-info" id="csvFileInfo" style="display:none">
+            <div class="csv-file-badge">
+              <span class="csv-file-icon">📄</span>
+              <span class="csv-file-name" id="csvFileName">—</span>
+              <span class="csv-file-size" id="csvFileSize">—</span>
+              <button class="csv-file-remove" id="csvRemoveBtn" title="Hapus file">✕</button>
+            </div>
+          </div>
+
+          <!-- Preview Table -->
+          <div class="csv-preview-wrapper" id="csvPreviewWrapper" style="display:none">
+            <div class="csv-preview-header">
+              <h3 class="csv-preview-title">👁 Pratinjau Data (<span id="csvRowCount">0</span> baris)</h3>
+              <div class="csv-preview-status" id="csvPreviewStatus"></div>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table csv-preview-table" id="csvPreviewTable">
+                <thead id="csvPreviewThead"></thead>
+                <tbody id="csvPreviewTbody"></tbody>
+              </table>
+            </div>
+            <div class="csv-import-actions">
+              <label class="csv-checkbox-label">
+                <input type="checkbox" id="csvReplaceMode" />
+                <span class="csv-checkbox-custom"></span>
+                <span>Ganti semua data field yang ada (Replace Mode)</span>
+              </label>
+              <div class="csv-import-btns">
+                <button class="btn btn-outline" id="csvCancelBtn">Batal</button>
+                <button class="btn btn-primary" id="csvImportBtn">📥 Import <span id="csvImportCount">0</span>
+                  Field</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LAPORAN PAGE ===== -->
+      <section class="page" id="page-laporan">
+        <div class="page-header">
+          <h1 class="page-title">Laporan Produksi</h1>
+          <p class="page-subtitle">Rekap dan analisis data produksi kelapa sawit</p>
+        </div>
+        <div class="card filter-bar-card">
+          <div class="filter-bar">
+            <div class="form-group mb-0">
+              <label class="form-label">Periode</label>
+              <select id="filterPeriode" class="form-control">
+                <option value="bulan">Bulan Ini</option>
+                <option value="bulan-lalu">Bulan Lalu</option>
+                <option value="custom">Rentang Tanggal</option>
+              </select>
+            </div>
+            <div class="form-group mb-0 date-range" id="customDateRange" style="display:none">
+              <label class="form-label">Dari</label>
+              <input type="date" id="filterDari" class="form-control" />
+            </div>
+            <div class="form-group mb-0 date-range" id="customDateRangeTo" style="display:none">
+              <label class="form-label">Sampai</label>
+              <input type="date" id="filterSampai" class="form-control" />
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label">Field</label>
+              <select id="filterBlok" class="form-control">
+                <option value="">Semua Field</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="filterBtn">🔍 Tampilkan</button>
+            <button class="btn btn-outline" id="printBtn">🖨️ Cetak</button>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card stat-green">
+            <div class="stat-icon">⚖️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="lap-tbs">0 kg</div>
+              <div class="stat-label">Total Produksi</div>
+            </div>
+          </div>
+          <div class="stat-card stat-gold">
+            <div class="stat-icon">🌿</div>
+            <div class="stat-info">
+              <div class="stat-value" id="lap-janjang">0</div>
+              <div class="stat-label">Total Janjang</div>
+            </div>
+          </div>
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="lap-hari">0</div>
+              <div class="stat-label">Hari Panen</div>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <div class="stat-icon">📈</div>
+            <div class="stat-info">
+              <div class="stat-value" id="lap-rata">0 kg</div>
+              <div class="stat-label">Rata-rata/Hari</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📋 Detail Laporan</h2>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="laporanTable">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Tanggal</th>
+                  <th>Field</th>
+                  <th>Produksi (kg)</th>
+                  <th>Janjang</th>
+                  <th>Luas (Ha)</th>
+                  <th>BJR</th>
+                  <th>AKP (%)</th>
+                  <th>Restan (kg)</th>
+                  <th>Jenis TK</th>
+                  <th>Mandor</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody id="laporanTbody">
+                <tr>
+                  <td colspan="12" class="empty-row">Pilih periode dan klik Tampilkan</td>
+                </tr>
+              </tbody>
+              <tfoot id="laporanTfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ENTRI TERBARU PAGE ===== -->
+      <section class="page" id="page-entri">
+        <div class="page-header">
+          <h1 class="page-title">Entri Terbaru</h1>
+          <p class="page-subtitle">Data produksi yang baru-baru ini diinput</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📝 Log Produksi Terbaru</h2>
+            <div class="search-box">
+              <input type="text" id="entriSearchInput" class="form-control" placeholder="🔍 Cari..." />
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Field</th>
+                  <th>Produksi (kg)</th>
+                  <th>Janjang</th>
+                  <th>Luas (Ha)</th>
+                  <th>BJR</th>
+                  <th>AKP (%)</th>
+                  <th>Restan (kg)</th>
+                  <th>Jenis TK</th>
+                  <th>Mandor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="entriTbody">
+                <tr>
+                  <td colspan="11" class="empty-row">Belum ada data</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RIWAYAT PAGE ===== -->
+      <section class="page" id="page-riwayat">
+        <div class="page-header">
+          <h1 class="page-title">Riwayat Data</h1>
+          <p class="page-subtitle">Semua entri data produksi dengan opsi edit dan hapus</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">🕐 Log Produksi</h2>
+            <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+              <button id="btnHapusTerpilih" class="btn btn-danger btn-sm" style="display: none;">🗑️ Hapus
+                Terpilih</button>
+              <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cari data..." />
+              </div>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllRiwayat"></th>
+                  <th>No</th>
+                  <th>Tanggal</th>
+                  <th>Field</th>
+                  <th>Produksi (kg)</th>
+                  <th>Janjang</th>
+                  <th>Luas (Ha)</th>
+                  <th>BJR</th>
+                  <th>AKP (%)</th>
+                  <th>Restan (kg)</th>
+                  <th>Jenis TK</th>
+                  <th>Mandor</th>
+                  <th>Input Pada</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="riwayatTbody">
+                <tr>
+                  <td colspan="13" class="empty-row">Belum ada data riwayat</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Modal</h3>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>
